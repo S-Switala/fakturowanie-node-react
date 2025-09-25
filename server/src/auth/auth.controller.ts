@@ -22,6 +22,7 @@ export class AuthController {
       nip: string;
       bank?: string;
       account?: string;
+      phoneNumber?: string;
     },
   ) {
     return this.authService.register(body);

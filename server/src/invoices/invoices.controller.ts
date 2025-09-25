@@ -16,6 +16,8 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { Response } from 'express';
 import { PdfService } from '../pdf/pdf.service';
 import { JwtService } from '@nestjs/jwt';
+import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 
 @Controller('invoices')
 export class InvoicesController {
@@ -27,23 +29,8 @@ export class InvoicesController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(
-    @Body()
-    body: {
-      title: string;
-      status: string;
-      clientId: string;
-      dueDate: string;
-      items: {
-        name: string;
-        quantity: number;
-        unit: string;
-        price: number;
-      }[];
-    },
-    @CurrentUser() user: any,
-  ) {
-    return this.invoicesService.create(body, user.userId);
+  create(@Body() dto: CreateInvoiceDto, @CurrentUser() user: any) {
+    return this.invoicesService.create(dto, user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -54,8 +41,12 @@ export class InvoicesController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  update(@Param('id') id: string, @Body() body, @CurrentUser() user: any) {
-    return this.invoicesService.update(id, user.userId, body);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateInvoiceDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.invoicesService.updateInvoiceWithItems(id, user.userId, dto);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -64,36 +55,29 @@ export class InvoicesController {
     return this.invoicesService.delete(id, user.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id/pdf')
   async generatePdf(
     @Param('id') id: string,
-    @Query('token') token: string,
+    @CurrentUser() user: any,
     @Res() res: Response,
   ) {
-    try {
-      const decoded = this.jwtService.verify(token);
-      const userId = decoded.sub;
-
-      const invoice = await this.invoicesService.getInvoiceWithClient(
-        id,
-        userId,
-      );
-
-      if (!invoice || !invoice.user || !invoice.client) {
-        return res
-          .status(404)
-          .send('Brak wymaganych danych do wygenerowania PDF');
-      }
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'inline; filename=faktura.pdf');
-
-      this.pdfService.generateInvoicePDF(invoice, res);
-    } catch (err) {
-      console.error('Błąd JWT lub PDF:', err.message);
-      if (!res.headersSent) {
-        return res.status(401).send('Unauthorized');
-      }
+    const invoice = await this.invoicesService.getInvoiceWithClient(
+      id,
+      user.userId,
+    );
+    if (!invoice || !invoice.user || !invoice.client) {
+      return res
+        .status(404)
+        .json({ error: 'Invoice not found or missing relations' });
     }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename=faktura-${invoice.number}.pdf`,
+    );
+
+    this.pdfService.generateInvoicePDF(invoice, res);
   }
 }
