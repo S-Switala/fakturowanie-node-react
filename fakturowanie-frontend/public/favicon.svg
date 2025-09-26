@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" aria-label="Fakturowanie">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <!-- kartka -->
+  <rect x="52" y="28" width="132" height="200" rx="12" ry="12" fill="white" stroke="url(#g)" stroke-width="12"/>
+  <!-- zagięty róg -->
+  <path d="M184 76h-36c-6.6 0-12-5.4-12-12V28" fill="none" stroke="url(#g)" stroke-width="12" stroke-linecap="round"/>
+  <!-- linie tekstu -->
+  <line x1="76" x2="180" y1="100" y2="100" stroke="#94a3b8" stroke-width="10" stroke-linecap="round"/>
+  <line x1="76" x2="160" y1="128" y2="128" stroke="#94a3b8" stroke-width="10" stroke-linecap="round"/>
+  <!-- tabela pozycji -->
+  <rect x="72" y="150" width="112" height="40" rx="6" fill="none" stroke="#94a3b8" stroke-width="8"/>
+  <line x1="112" x2="112" y1="150" y2="190" stroke="#94a3b8" stroke-width="8"/>
+  <line x1="152" x2="152" y1="150" y2="190" stroke="#94a3b8" stroke-width="8"/>
+  <!-- znaczek PLN -->
+  <circle cx="108" cy="68" r="16" fill="url(#g)"/>
+  <text x="108" y="74" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" fill="white">PLN</text>
+</svg>
