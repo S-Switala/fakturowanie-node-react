@@ -6,7 +6,10 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { PrismaColdStartFilter } from './common/filters/prisma-coldstart.filter';
 
 function parseList(name: string, fallback: string[] = []) {
-  return (process.env[name]?.split(',') ?? fallback)
+  const raw = process.env[name];
+  if (!raw || !raw.trim()) return fallback;
+  return raw
+    .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
 }
@@ -26,18 +29,28 @@ async function bootstrap() {
       transform: true,
     }),
   );
-
   app.useGlobalFilters(new PrismaColdStartFilter());
 
-  const origins = parseList('CORS_ORIGINS', ['http://localhost:5173']);
+  // jawna lista z ENV + domyślnie Netlify prod
+  const allowed = parseList('CORS_ORIGINS', [
+    'http://localhost:5173',
+    'https://fakturowanie.netlify.app',
+  ]);
+
+  // pozwól też na Netlify deploy/branch previews dla tej domeny
+  const netlifyAny =
+    /^https:\/\/(?:deploy-preview-\d+--|[a-z0-9-]+--)fakturowanie\.netlify\.app$/;
+
   app.enableCors({
-    origin: (origin, cb) =>
-      !origin || origins.includes(origin)
-        ? cb(null, true)
-        : cb(new Error('CORS'), false),
-    credentials: false, // Bearer: nie wysyłamy cookies
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type,Authorization', // <— ważne
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // curl/Postman
+      if (allowed.includes(origin) || netlifyAny.test(origin))
+        return cb(null, true);
+      return cb(new Error(`CORS: ${origin} not allowed`), false);
+    },
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false, // używasz Bearer, więc cookies niepotrzebne
   });
 
   const port = Number(process.env.PORT ?? 3000);

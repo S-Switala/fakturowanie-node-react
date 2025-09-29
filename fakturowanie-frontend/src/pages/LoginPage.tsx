@@ -4,6 +4,7 @@ import axios from 'axios'
 import { ENDPOINTS, API_URL } from '../config'
 
 const sleep = (ms: number) => new Promise(res => setTimeout(res, ms))
+const anon = axios.create({ baseURL: API_URL, timeout: 8000 })
 
 function isColdStart(err: any) {
 	const status = err?.response?.status
@@ -19,13 +20,13 @@ function isColdStart(err: any) {
 	)
 }
 
-async function warmup(maxTries = 6) {
-	for (let i = 0; i < maxTries; i++) {
+async function warmup(max = 6) {
+	for (let i = 0; i < max; i++) {
 		try {
-			await axios.get(`${API_URL}/health`, { params: { t: Date.now() }, timeout: 8000 })
+			await anon.get('/health', { params: { t: Date.now() } }) // bez Authorization
 			return true
 		} catch {
-			await sleep(400 * (i + 1))
+			await new Promise(r => setTimeout(r, 400 * (i + 1)))
 		}
 	}
 	return false
