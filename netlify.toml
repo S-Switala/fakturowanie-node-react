@@ -7,7 +7,15 @@ publish = "dist"
 [build.environment]
 NODE_VERSION = "20"
 
-# Single Page App: przekieruj wszystkie ścieżki do index.html
+
+# --- API proxy: najpierw /api/* -> Railway ---
+[[redirects]]
+from = "/api/*"
+to = "https://fakturowanie-node-react-production.up.railway.app/:splat"
+status = 200
+force = true
+
+# --- SPA fallback: na końcu ---
 [[redirects]]
 from = "/*"
 to = "/index.html"
