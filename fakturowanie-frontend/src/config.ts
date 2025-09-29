@@ -6,5 +6,5 @@ export const ENDPOINTS = {
   me: `${API_URL}/me`,
   clients: `${API_URL}/clients`,
   invoices: `${API_URL}/invoices`,
-  
+  health: `${API_URL}/health`,
 };
