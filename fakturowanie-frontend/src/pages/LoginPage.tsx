@@ -3,12 +3,20 @@ import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import { ENDPOINTS, API_URL } from '../config'
 
-const sleep = (ms: number) => new Promise(res => setTimeout(res, ms))
-const anon = axios.create({ baseURL: API_URL, timeout: 8000 })
+export const anon = axios.create({ baseURL: API_URL, timeout: 8000 })
+
+// gwarancja: brak Authorization i zbędnych X-* nagłówków
+anon.interceptors.request.use(cfg => {
+	if (cfg.headers) {
+		delete (cfg.headers as any).Authorization
+		delete (cfg.headers as any)['X-Requested-With']
+	}
+	return cfg
+})
 
 function isColdStart(err: any) {
 	const status = err?.response?.status
-	const code = err?.code // np. 'ECONNABORTED' przy timeout
+	const code = err?.code
 	return (
 		!status ||
 		status === 0 ||
@@ -20,10 +28,10 @@ function isColdStart(err: any) {
 	)
 }
 
-async function warmup(max = 6) {
+export async function warmup(max = 6) {
 	for (let i = 0; i < max; i++) {
 		try {
-			await anon.get('/health', { params: { t: Date.now() } }) // bez Authorization
+			await anon.get('/health', { params: { t: Date.now() } }) // prosty GET, brak preflightu
 			return true
 		} catch {
 			await new Promise(r => setTimeout(r, 400 * (i + 1)))
