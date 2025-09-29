@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { PrismaColdStartFilter } from './common/filters/prisma-coldstart.filter';
 
 function parseList(name: string, fallback: string[] = []) {
   return (process.env[name]?.split(',') ?? fallback)
@@ -25,6 +26,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.useGlobalFilters(new PrismaColdStartFilter());
 
   const origins = parseList('CORS_ORIGINS', ['http://localhost:5173']);
   app.enableCors({
