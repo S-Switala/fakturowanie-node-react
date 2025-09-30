@@ -3,9 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import { ENDPOINTS, API_URL } from '../config'
 
+// --- anonimowy klient do /health (bez Authorization) ---
 export const anon = axios.create({ baseURL: API_URL, timeout: 8000 })
-
-// gwarancja: brak Authorization i zbędnych X-* nagłówków
 anon.interceptors.request.use(cfg => {
 	if (cfg.headers) {
 		delete (cfg.headers as any).Authorization
@@ -31,10 +30,13 @@ function isColdStart(err: any) {
 export async function warmup(max = 6) {
 	for (let i = 0; i < max; i++) {
 		try {
-			await anon.get('/health', { params: { t: Date.now() } }) // prosty GET, brak preflightu
+			await anon.get('/health', {
+				params: { t: Date.now(), deep: 1 }, // pełniejsze „obudzenie”
+				timeout: 15000,
+			})
 			return true
 		} catch {
-			await new Promise(r => setTimeout(r, 400 * (i + 1)))
+			await new Promise(r => setTimeout(r, 500 * (i + 1)))
 		}
 	}
 	return false
@@ -58,7 +60,11 @@ export default function LoginPage() {
 		setBusy(true)
 
 		const tryLogin = async () => {
-			const res = await axios.post(ENDPOINTS.login, { email, password }, { timeout: 12000 })
+			const res = await axios.post(
+				ENDPOINTS.login,
+				{ email, password },
+				{ timeout: 20000 } // dłużej na zimny start
+			)
 			const token = res?.data?.access_token || res?.data?.accessToken || res?.data?.token
 			if (!token) throw new Error('Brak tokenu w odpowiedzi serwera')
 			localStorage.setItem('token', token)
@@ -67,7 +73,7 @@ export default function LoginPage() {
 		}
 
 		try {
-			// PRZED pierwszym logowaniem budzimy backend (to często załatwia sprawę)
+			// pre-warmup przed 1. próbą logowania
 			setMsg('Budzenie serwera…')
 			await warmup(3)
 
@@ -101,6 +107,7 @@ export default function LoginPage() {
 	return (
 		<div className='min-h-screen bg-gray-100 flex items-center justify-center'>
 			<div className='w-80'>
+				{/* Sekcja z przykładowym użytkownikiem */}
 				<div className='mb-4 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded p-3 shadow'>
 					<p className='font-semibold mb-1'>Przykładowy użytkownik:</p>
 					<p>
@@ -111,6 +118,7 @@ export default function LoginPage() {
 					</p>
 				</div>
 
+				{/* Formularz logowania */}
 				<form onSubmit={handleLogin} className='bg-white p-6 rounded shadow-md'>
 					<h2 className='text-xl font-bold mb-4 text-center'>Logowanie</h2>
 
